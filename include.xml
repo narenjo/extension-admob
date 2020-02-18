@@ -18,17 +18,10 @@
 	<section if="ios">
 		<ndll name="admobex" />
 		<dependency path="frameworks/GoogleMobileAds.framework" />
-		<dependency name="AdSupport.framework" />
-		<dependency name="AudioToolbox.framework" />
-		<dependency name="AVFoundation.framework" />
-		<dependency name="CoreGraphics.framework" />
-		<dependency name="CoreMedia.framework" />
-		<dependency name="CoreTelephony.framework" />
-		<dependency name="EventKit.framework" />
-		<dependency name="EventKitUI.framework" />
-		<dependency name="MediaPlayer.framework" />
-		<dependency name="MessageUI.framework" />
-		<dependency name="StoreKit.framework" />
-		<dependency name="SystemConfiguration.framework" />
+		<dependency path="frameworks/GoogleAppMeasurement.framework" />
+		<dependency path="frameworks/GoogleUtilities.framework" />
+		<dependency path="frameworks/nanopb.framework" />
+		<template path="templates" />
+		<config:ios linker-flags="-ObjC"/>
 	</section>
 </extension>
