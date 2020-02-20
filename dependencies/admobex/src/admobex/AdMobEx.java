@@ -1,29 +1,28 @@
 package admobex;
-import java.util.Date;
-import java.util.Queue;
 
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.Bundle;
+import android.provider.Settings.Secure;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.Window;
-import android.view.WindowManager;
-import android.content.Context;
-import android.content.Intent;
-import android.media.AudioManager;
-import android.media.audiofx.AudioEffect.OnControlStatusChangeListener;
-import android.widget.RelativeLayout;
-import android.view.ViewGroup;
-import org.haxe.extension.Extension;
-import org.haxe.lime.HaxeObject;
 import android.view.Gravity;
 import android.view.View;
-import android.util.Log;
-import android.provider.Settings.Secure;
-import java.security.MessageDigest;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 
-import com.google.android.gms.ads.*;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.rewarded.RewardItem;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdCallback;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+
+import org.haxe.extension.Extension;
+import org.haxe.lime.HaxeObject;
+
+import java.security.MessageDigest;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AdMobEx extends Extension {
 
@@ -31,6 +30,7 @@ public class AdMobEx extends Extension {
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 
 	private InterstitialAd interstitial;
+	private Map<String, RewardedAd> rewardeds;
 	private AdView banner;
 	private RelativeLayout rl;
 	private AdRequest adReq;
@@ -41,6 +41,10 @@ public class AdMobEx extends Extension {
 	private static Boolean failInterstitial=false;
 	private static Boolean loadingInterstitial=false;
 	private static String interstitialId=null;
+
+	private static Boolean failRewarded=false;
+	private static Boolean loadingRewarded=false;
+	private static String[] rewardedIds= null;
 
 	private static Boolean failBanner=false;
 	private static Boolean loadingBanner=false;
@@ -63,6 +67,7 @@ public class AdMobEx extends Extension {
 	public static final String DISPLAYING = "DISPLAYING";
 	public static final String LOADED = "LOADED";
 	public static final String LOADING = "LOADING";
+	public static final String EARNED_REWARD = "EARNED_REWARD";
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,9 +81,10 @@ public class AdMobEx extends Extension {
 	}
 
 
-	public static void init(String bannerId, String interstitialId, String gravityMode, boolean testingAds, boolean tagForChildDirectedTreatment, HaxeObject callback){
+	public static void init(String bannerId, String interstitialId, String[] rewardedIds, String gravityMode, boolean testingAds, boolean tagForChildDirectedTreatment, HaxeObject callback){
 		AdMobEx.bannerId=bannerId;
 		AdMobEx.interstitialId=interstitialId;
+		AdMobEx.rewardedIds=rewardedIds;
 		AdMobEx.testingAds=testingAds;
 		AdMobEx.callback=callback;
 		AdMobEx.tagForChildDirectedTreatment=tagForChildDirectedTreatment;
@@ -87,13 +93,13 @@ public class AdMobEx extends Extension {
 		}
 		mainActivity.runOnUiThread(new Runnable() {
 			public void run() { getInstance(); }
-		});	
+		});
 	}
 
 	private static void reportInterstitialEvent(final String event){
 		if(callback == null) return;
 		mainActivity.runOnUiThread(new Runnable() {
-			public void run() { 
+			public void run() {
 				callback.call1("_onInterstitialEvent",event);
 			}
 		});
@@ -105,7 +111,7 @@ public class AdMobEx extends Extension {
 		if(failInterstitial){
 			mainActivity.runOnUiThread(new Runnable() {
 				public void run() { getInstance().reloadInterstitial();}
-			});	
+			});
 			Log.d("AdMobEx","Show Interstitial: Interstitial not loaded... reloading.");
 			return false;
 		}
@@ -115,7 +121,7 @@ public class AdMobEx extends Extension {
 			return false;
 		}
 		mainActivity.runOnUiThread(new Runnable() {
-			public void run() {	
+			public void run() {
 				if(!getInstance().interstitial.isLoaded()){
 					reportInterstitialEvent(AdMobEx.FAILED);
 					Log.d("AdMobEx","Show Interstitial: Not loaded (THIS SHOULD NEVER BE THE CASE HERE!)... ignoring.");
@@ -125,6 +131,73 @@ public class AdMobEx extends Extension {
 			}
 		});
 		Log.d("AdMobEx","Show Interstitial: Compelte.");
+		return true;
+	}
+
+	private static void reportRewardedEvent(final String event){
+		reportRewardedEvent(event, null);
+	}
+	private static void reportRewardedEvent(final String event, final String data){
+		if(callback == null) return;
+		mainActivity.runOnUiThread(new Runnable() {
+			public void run() {
+				callback.call2("_onRewardedEvent", event, data);
+			}
+		});
+	}
+
+	public static boolean showRewarded(final String rewardedId) {
+		Log.d("AdMobEx","Show Rewarded: Begins");
+		if(loadingRewarded) return false;
+		if(failRewarded){
+			mainActivity.runOnUiThread(new Runnable() {
+				public void run() { getInstance().reloadRewarded(rewardedId);}
+			});
+			Log.d("AdMobEx","Show Rewarded: Rewarded not loaded... reloading.");
+			return false;
+		}
+
+		if(rewardedId=="") {
+			Log.d("AdMobEx","Show Rewarded: RewardedID is empty... ignoring.");
+			return false;
+		}
+		mainActivity.runOnUiThread(new Runnable() {
+			public void run() {
+				if(!getInstance().rewardeds.get(rewardedId).isLoaded()){
+					reportRewardedEvent(AdMobEx.FAILED);
+					Log.d("AdMobEx","Show Rewarded: Not loaded (THIS SHOULD NEVER BE THE CASE HERE!)... ignoring.");
+					return;
+				}
+				RewardedAdCallback rewardedCallback = new RewardedAdCallback() {
+
+					public void onRewardedAdFailedToShow(int errorcode) {
+						AdMobEx.getInstance().failRewarded = true;
+						reportRewardedEvent(AdMobEx.FAILED);
+						Log.d("AdMobEx", "Fail to get Rewarded: " + errorcode);
+					}
+
+					public void onRewardedAdClosed() {
+						AdMobEx.getInstance().reloadRewarded(rewardedId);
+						reportRewardedEvent(AdMobEx.CLOSED);
+						Log.d("AdMobEx", "Dismiss Rewarded");
+					}
+
+					public void onRewardedAdOpened() {
+						reportRewardedEvent(AdMobEx.DISPLAYING);
+						Log.d("AdMobEx", "Displaying Rewarded");
+					}
+
+					public void onUserEarnedReward(final RewardItem reward) {
+						String data = "{\"type\": \"" + reward.getType() + "\", \"amount\": \"" + reward.getAmount() +"\"}";
+						reportRewardedEvent(AdMobEx.EARNED_REWARD, data);
+						Log.d("AdMobEx", "User earned reward " + data);
+					}
+				};
+
+				getInstance().rewardeds.get(rewardedId).show(mainActivity, rewardedCallback);
+			}
+		});
+		Log.d("AdMobEx","Show Rewarded: Compelte.");
 		return true;
 	}
 
@@ -139,7 +212,7 @@ public class AdMobEx extends Extension {
 			return;
 		}
 		Log.d("AdMobEx","Show Banner");
-		
+
 		mainActivity.runOnUiThread(new Runnable() {
 			public void run() {
 				getInstance().rl.removeView(getInstance().banner);
@@ -176,11 +249,11 @@ public class AdMobEx extends Extension {
 
 		if(testingAds){
 			String android_id = Secure.getString(mainActivity.getContentResolver(), Secure.ANDROID_ID);
-    	    String deviceId = md5(android_id).toUpperCase();
+			String deviceId = md5(android_id).toUpperCase();
 			Log.d("AdMobEx","DEVICE ID: "+deviceId);
 			builder.addTestDevice(deviceId);
 		}
-		
+
 		builder.addTestDevice(AdRequest.DEVICE_ID_EMULATOR);
 		if(tagForChildDirectedTreatment){
 			Log.d("AdMobEx","Enabling COPPA support.");
@@ -191,7 +264,7 @@ public class AdMobEx extends Extension {
 		if(bannerId!=""){
 			this.reinitBanner();
 		}
-		
+
 		if(interstitialId!=""){
 			interstitial = new InterstitialAd(mainActivity);
 			interstitial.setAdUnitId(interstitialId);
@@ -202,7 +275,7 @@ public class AdMobEx extends Extension {
 					Log.d("AdMobEx","Received Interstitial!");
 				}
 				public void onAdFailedToLoad(int errorcode) {
-					AdMobEx.getInstance().loadingInterstitial=false;	
+					AdMobEx.getInstance().loadingInterstitial=false;
 					AdMobEx.getInstance().failInterstitial=true;
 					reportInterstitialEvent(AdMobEx.FAILED);
 					Log.d("AdMobEx","Fail to get Interstitial: "+errorcode);
@@ -223,10 +296,17 @@ public class AdMobEx extends Extension {
 			});
 			this.reloadInterstitial();
 		}
+		if(rewardedIds != null && rewardedIds.length > 0){
+			rewardeds = new HashMap<>();
+			for(String rewardedId: rewardedIds) {
+				rewardeds.put(rewardedId, new RewardedAd(mainActivity, rewardedId));
+				this.reloadRewarded(rewardedId);
+			}
+		}
 	}
 
 	private void reinitBanner(){
-		if(loadingBanner) return;	
+		if(loadingBanner) return;
 		if(banner==null){ // if this is the first time we call this function
 			rl = new RelativeLayout(mainActivity);
 			rl.setGravity(gravity);
@@ -242,24 +322,24 @@ public class AdMobEx extends Extension {
 		banner.setAdSize(AdSize.SMART_BANNER);
 		banner.setAdListener(new AdListener() {
 			public void onAdLoaded() {
-				AdMobEx.getInstance().loadingBanner=false;	
+				AdMobEx.getInstance().loadingBanner=false;
 				Log.d("AdMobEx","Received Banner OK!");
 				if(AdMobEx.getInstance().mustBeShowingBanner){
 					AdMobEx.getInstance().showBanner();
 				}else{
 					AdMobEx.getInstance().hideBanner();
-				}				
+				}
 			}
 			public void onAdFailedToLoad(int errorcode) {
 				AdMobEx.getInstance().loadingBanner=false;
 				AdMobEx.getInstance().failBanner=true;
-				Log.d("AdMobEx","Fail to get Banner: "+errorcode);				
+				Log.d("AdMobEx","Fail to get Banner: "+errorcode);
 			}
 		});
 
 		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-			RelativeLayout.LayoutParams.MATCH_PARENT,
-			RelativeLayout.LayoutParams.MATCH_PARENT);					
+				RelativeLayout.LayoutParams.MATCH_PARENT,
+				RelativeLayout.LayoutParams.MATCH_PARENT);
 		mainActivity.addContentView(rl, params);
 		rl.addView(banner);
 		rl.bringToFront();
@@ -276,6 +356,32 @@ public class AdMobEx extends Extension {
 		failInterstitial=false;
 	}
 
+	private void reloadRewarded(String rewardedId){
+		if(rewardedId=="") return;
+		if(loadingRewarded) return;
+		Log.d("AdMobEx","Reload Rewarded");
+		reportRewardedEvent(AdMobEx.LOADING);
+		loadingRewarded=true;
+		RewardedAdLoadCallback adLoadCallback = new RewardedAdLoadCallback() {
+			@Override
+			public void onRewardedAdLoaded() {
+				AdMobEx.getInstance().loadingRewarded=false;
+				reportRewardedEvent(AdMobEx.LOADED);
+				Log.d("AdMobEx","Received Rewarded!");
+			}
+
+			@Override
+			public void onRewardedAdFailedToLoad(int errorCode) {
+				AdMobEx.getInstance().loadingRewarded=false;
+				AdMobEx.getInstance().failRewarded=true;
+				reportRewardedEvent(AdMobEx.FAILED);
+				Log.d("AdMobEx","Fail to get Rewarded: "+errorCode);
+			}
+		};
+		rewardeds.get(rewardedId).loadAd(adReq, adLoadCallback);
+		failRewarded=false;
+	}
+
 	private void reloadBanner(){
 		if(bannerId=="") return;
 		if(loadingBanner) return;
@@ -288,11 +394,11 @@ public class AdMobEx extends Extension {
 	private static String md5(String s)  {
 		MessageDigest digest;
 		try  {
-		    digest = MessageDigest.getInstance("MD5");
-		    digest.update(s.getBytes(),0,s.length());
-		    String hexDigest = new java.math.BigInteger(1, digest.digest()).toString(16);
-		    if (hexDigest.length() >= 32) return hexDigest;
-		    else return "00000000000000000000000000000000".substring(hexDigest.length()) + hexDigest;
+			digest = MessageDigest.getInstance("MD5");
+			digest.update(s.getBytes(),0,s.length());
+			String hexDigest = new java.math.BigInteger(1, digest.digest()).toString(16);
+			if (hexDigest.length() >= 32) return hexDigest;
+			else return "00000000000000000000000000000000".substring(hexDigest.length()) + hexDigest;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
