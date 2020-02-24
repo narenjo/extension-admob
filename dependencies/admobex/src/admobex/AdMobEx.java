@@ -299,7 +299,6 @@ public class AdMobEx extends Extension {
 		if(rewardedIds != null && rewardedIds.length > 0){
 			rewardeds = new HashMap<>();
 			for(String rewardedId: rewardedIds) {
-				rewardeds.put(rewardedId, new RewardedAd(mainActivity, rewardedId));
 				this.reloadRewarded(rewardedId);
 			}
 		}
@@ -359,6 +358,7 @@ public class AdMobEx extends Extension {
 	private void reloadRewarded(String rewardedId){
 		if(rewardedId=="") return;
 		if(loadingRewarded) return;
+		rewardeds.put(rewardedId, new RewardedAd(mainActivity, rewardedId));
 		Log.d("AdMobEx","Reload Rewarded");
 		reportRewardedEvent(AdMobEx.LOADING);
 		loadingRewarded=true;
