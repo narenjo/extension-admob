@@ -160,6 +160,7 @@ class AdMob {
 	public static inline var DISPLAYING:String = "DISPLAYING";
 	public static inline var LOADED:String = "LOADED";
 	public static inline var LOADING:String = "LOADING";
+	public static inline var EARNED_REWARD:String = "EARNED_REWARD";
 
 	////////////////////////////////////////////////////////////////////////////
 
