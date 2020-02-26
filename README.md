@@ -5,7 +5,14 @@ This extension allows you to easily integrate Google AdMob on your OpenFL (or Ha
 
 #ADDED BY Narenjo
  * Rewarded ADS
- 
+ * Update iOS & Android SDK
+Starting with Android SDK 17.0.0 and iOS SDK 7.42.0, you must set the app id in your project.xml
+```xml
+<setenv name="ADMOB_APPID" value="ca-app-pub-XXXXX123457" if="android"/>
+<setenv name="ADMOB_APPID" value="ca-app-pub-XXXXX123458" if="ios"/>
+```
+iOS : the admob appid is added in ::EXPORT::/ios/::APP::/extension-admob-Info.plist. You must merge this file with ::APP::-Info.plist manually or with /usr/libexec/PlistBuddy
+
 ###Main Features
 
 * Banners & Interstitial Support.
