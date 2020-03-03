@@ -48,8 +48,8 @@ class MainClass {
 		// parameters are (bannerId:String, interstitialId:String, gravityMode:GravityMode).
 		// if you don't have the bannerId and interstitialId, go to www.google.com/ads/admob to create them.
 
-		AdMob.initAndroid("ca-app-pub-XXXXX123456","ca-app-pub-XXXXX123457", GravityMode.BOTTOM); // may also be GravityMode.TOP
-		AdMob.initIOS("ca-app-pub-XXXXX123458","ca-app-pub-XXXXX123459", GravityMode.BOTTOM); // may also be GravityMode.TOP
+		AdMob.initAndroid("ca-app-pub-XXXXX123456","ca-app-pub-XXXXX123457", ["ca-app-pub-XXXXX123454", "ca-app-pub-XXXXX123455"], GravityMode.BOTTOM); // may also be GravityMode.TOP
+		AdMob.initIOS("ca-app-pub-XXXXX123458","ca-app-pub-XXXXX123459", ["ca-app-pub-XXXXX123452", "ca-app-pub-XXXXX123453"], GravityMode.BOTTOM); // may also be GravityMode.TOP
 
 		// NOTE: If your game allows screen rotation, you should call AdMob.onResize(); when rotation happens.
 	}
@@ -85,6 +85,14 @@ class MainClass {
 		// some implementation
 		AdMob.hideBanner(); // if you don't want the banner to be on screen while playing... call AdMob.hideBanner();
 	}
+
+	function clickRewardedAd(){
+		// If you want to get rewarded events (EARNED_REWARD, LOADING, LOADED, CLOSED, DISPLAYING, ETC), provide
+		// some callback function for this.
+		AdMob.onRewardedEvent = onRewardedEvent;
+
+		AdMob.showRewarded("ca-app-pub-XXXXX123454");
+	}
 	
 	function onInterstitialEvent(event:String) {
 		trace("THE INSTERSTITIAL IS "+event);
@@ -103,7 +111,28 @@ class MainClass {
 		else if(event == AdMob.FAILED) trace("Failed to load the ad... the extension will retry automatically.");
 		*/
 	}
-	
+
+	function onRewardedEvent(event:String, ?data:RewardItem) {
+		trace("THE REWARDED IS "+event);
+		if(event == AdMob.EARNED_REWARD) trace("THE USER WAS REWARDED BY " + data.amount + " " + data.type);
+		/*
+		Note that the "event" String will be one of this:
+		    AdMob.LEAVING
+		    AdMob.FAILED
+		    AdMob.CLOSED
+		    AdMob.DISPLAYING
+		    AdMob.LOADED
+			AdMob.LOADING
+			AdMob.EARNED_REWARD
+		
+		In case of an EARNED_REWARD event, data is a reward object :
+		typedef RewardItem = {
+			var type:String;
+			var amount:Int;
+		}
+		Otherwise data is null
+		*/
+	}
 }
 
 ```
