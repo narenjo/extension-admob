@@ -1,9 +1,9 @@
-#extension-admob
+# extension-admob
 
 OpenFL extension for "Google AdMob" on iOS and Android.
 This extension allows you to easily integrate Google AdMob on your OpenFL (or HaxeFlixel) game / application.
 
-#ADDED BY Narenjo
+## ADDED BY Narenjo
  * Rewarded ADS
  * Update iOS & Android SDK
 Starting with Android SDK 17.0.0 and iOS SDK 7.42.0, you must set the app id in your project.xml
@@ -13,7 +13,7 @@ Starting with Android SDK 17.0.0 and iOS SDK 7.42.0, you must set the app id in 
 ```
 iOS : the admob appid is added in ::EXPORT::/ios/::APP::/extension-admob-Info.plist. You must merge this file with ::APP::-Info.plist manually or with /usr/libexec/PlistBuddy
 
-###Main Features
+### Main Features
 
 * Banners & Interstitial Support.
 * Setup your banners to be on top or on the bottom of the screen.
@@ -21,7 +21,7 @@ iOS : the admob appid is added in ::EXPORT::/ios/::APP::/extension-admob-Info.pl
 * Allows you to specify min amount of calls to interstitial before it actually gets displayed (to avoid annoying your users).
 * Callback support for Interstitial Events.
 
-###Simple use Example
+### Simple use Example
 
 ```haxe
 // This example show a simple use case.
@@ -137,7 +137,7 @@ class MainClass {
 
 ```
 
-###How to Install
+### How to Install
 
 To install this library, you can simply get the library from haxelib like this:
 ```bash
@@ -154,7 +154,7 @@ Also, you may need to set android sdk version to 23 or higher (as some versions 
 <android target-sdk-version="23" if="android" />
 ```
 
-###Disclaimer
+### Disclaimer
 
 Google is a registered trademark of Google Inc.
 http://unibrander.com/united-states/140279US/google.html
@@ -162,7 +162,7 @@ http://unibrander.com/united-states/140279US/google.html
 AdMob is a registrered trademark of Google Inc.
 http://unibrander.com/united-states/479956US/admob.html
 
-###License
+### License
 
 The MIT License (MIT) - [LICENSE.md](LICENSE.md)
 
