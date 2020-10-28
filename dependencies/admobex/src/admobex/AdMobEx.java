@@ -42,8 +42,8 @@ public class AdMobEx extends Extension {
 	private static Boolean loadingInterstitial=false;
 	private static String interstitialId=null;
 
-	private static Boolean failRewarded=false;
-	private static Boolean loadingRewarded=false;
+	//private static Boolean failRewarded=false;
+	//private static Boolean loadingRewarded=false;
 	private static String[] rewardedIds= null;
 
 	private static Boolean failBanner=false;
@@ -148,14 +148,14 @@ public class AdMobEx extends Extension {
 
 	public static boolean showRewarded(final String rewardedId) {
 		Log.d("AdMobEx","Show Rewarded: Begins");
-		if(loadingRewarded) return false;
-		if(failRewarded){
-			mainActivity.runOnUiThread(new Runnable() {
-				public void run() { getInstance().reloadRewarded(rewardedId);}
-			});
-			Log.d("AdMobEx","Show Rewarded: Rewarded not loaded... reloading.");
-			return false;
-		}
+		// if(loadingRewarded) return false;
+		// if(failRewarded){
+		// 	mainActivity.runOnUiThread(new Runnable() {
+		// 		public void run() { getInstance().reloadRewarded(rewardedId);}
+		// 	});
+		// 	Log.d("AdMobEx","Show Rewarded: Rewarded not loaded... reloading.");
+		// 	return false;
+		// }
 
 		if(rewardedId=="") {
 			Log.d("AdMobEx","Show Rewarded: RewardedID is empty... ignoring.");
@@ -171,7 +171,7 @@ public class AdMobEx extends Extension {
 				RewardedAdCallback rewardedCallback = new RewardedAdCallback() {
 
 					public void onRewardedAdFailedToShow(int errorcode) {
-						AdMobEx.getInstance().failRewarded = true;
+						// AdMobEx.getInstance().failRewarded = true;
 						reportRewardedEvent(AdMobEx.FAILED);
 						Log.d("AdMobEx", "Fail to get Rewarded: " + errorcode);
 					}
@@ -357,29 +357,29 @@ public class AdMobEx extends Extension {
 
 	private void reloadRewarded(String rewardedId){
 		if(rewardedId=="") return;
-		if(loadingRewarded) return;
+		// if(loadingRewarded) return;
 		rewardeds.put(rewardedId, new RewardedAd(mainActivity, rewardedId));
-		Log.d("AdMobEx","Reload Rewarded");
+		Log.d("AdMobEx","Reload Rewarded " + rewardedId);
 		reportRewardedEvent(AdMobEx.LOADING);
-		loadingRewarded=true;
+		// loadingRewarded=true;
 		RewardedAdLoadCallback adLoadCallback = new RewardedAdLoadCallback() {
 			@Override
 			public void onRewardedAdLoaded() {
-				AdMobEx.getInstance().loadingRewarded=false;
+				// AdMobEx.getInstance().loadingRewarded=false;
 				reportRewardedEvent(AdMobEx.LOADED);
 				Log.d("AdMobEx","Received Rewarded!");
 			}
 
 			@Override
 			public void onRewardedAdFailedToLoad(int errorCode) {
-				AdMobEx.getInstance().loadingRewarded=false;
-				AdMobEx.getInstance().failRewarded=true;
+				// AdMobEx.getInstance().loadingRewarded=false;
+				// AdMobEx.getInstance().failRewarded=true;
 				reportRewardedEvent(AdMobEx.FAILED);
 				Log.d("AdMobEx","Fail to get Rewarded: "+errorCode);
 			}
 		};
 		rewardeds.get(rewardedId).loadAd(adReq, adLoadCallback);
-		failRewarded=false;
+		// failRewarded=false;
 	}
 
 	private void reloadBanner(){
