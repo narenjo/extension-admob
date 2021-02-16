@@ -1,7 +1,9 @@
 package admobex;
 
 import android.provider.Settings.Secure;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,6 +52,7 @@ public class AdMobEx extends Extension {
 	private static Boolean loadingBanner=false;
 	private static Boolean mustBeShowingBanner=false;
 	private static String bannerId=null;
+	private static AdSize bannerSize=null;
 
 	private static AdMobEx instance=null;
 	private static Boolean testingAds=false;
@@ -93,6 +96,15 @@ public class AdMobEx extends Extension {
 		}
 		mainActivity.runOnUiThread(new Runnable() {
 			public void run() { getInstance(); }
+		});
+	}
+
+	private static void reportBannerEvent(final String event){
+		if(callback == null) return;
+		mainActivity.runOnUiThread(new Runnable() {
+			public void run() {
+				callback.call1("_onBannerEvent",event);
+			}
 		});
 	}
 
@@ -240,6 +252,10 @@ public class AdMobEx extends Extension {
 		});
 	}
 
+	public static float getBannerHeight(){
+		return bannerSize.getHeight() * mainContext.getResources().getDisplayMetrics().density;
+	}
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -318,12 +334,12 @@ public class AdMobEx extends Extension {
 
 		banner = new AdView(mainActivity);
 		banner.setAdUnitId(bannerId);
-		banner.setAdSize(AdSize.SMART_BANNER);
 		banner.setAdListener(new AdListener() {
 			public void onAdLoaded() {
 				AdMobEx.getInstance().loadingBanner=false;
 				Log.d("AdMobEx","Received Banner OK!");
 				if(AdMobEx.getInstance().mustBeShowingBanner){
+					reportBannerEvent(AdMobEx.LOADED);
 					AdMobEx.getInstance().showBanner();
 				}else{
 					AdMobEx.getInstance().hideBanner();
@@ -344,6 +360,23 @@ public class AdMobEx extends Extension {
 		rl.bringToFront();
 		reloadBanner();
 	}
+
+	private AdSize getAdSize() {
+		// Step 2 - Determine the screen width (less decorations) to use for the ad width.
+		Display display = mainActivity.getWindowManager().getDefaultDisplay();
+		DisplayMetrics outMetrics = new DisplayMetrics();
+		display.getMetrics(outMetrics);
+
+		float widthPixels = outMetrics.widthPixels;
+		float density = outMetrics.density;
+
+		int adWidth = (int) (widthPixels / density);
+
+		// Step 3 - Get adaptive ad size and return for setting on the ad view.
+		return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(mainContext, adWidth);
+	}
+
+
 
 	private void reloadInterstitial(){
 		if(interstitialId=="") return;
@@ -386,6 +419,10 @@ public class AdMobEx extends Extension {
 		if(bannerId=="") return;
 		if(loadingBanner) return;
 		Log.d("AdMobEx","Reload Banner");
+		bannerSize = getAdSize();
+		// Step 4 - Set the adaptive ad size on the ad view.
+		banner.setAdSize(bannerSize);
+
 		loadingBanner=true;
 		banner.loadAd(adReq);
 		failBanner=false;
